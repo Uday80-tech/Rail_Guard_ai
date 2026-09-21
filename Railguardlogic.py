@@ -1,9 +1,9 @@
 from ultralytics import YOLO
 import cv2
 
-model = YOLO("models/yolo26m.pt")  #yolo object detection model
+model = YOLO("models/yolo26x.pt")  #yolo object detection model
 
-cap = cv2.VideoCapture("videos/platform.mp4") #video source
+cap = cv2.VideoCapture("videos/notrain.mp4") #video source
 
 # function to check side
 def side_of_line(point, line_start, line_end):
