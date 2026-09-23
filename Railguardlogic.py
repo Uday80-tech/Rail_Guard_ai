@@ -37,8 +37,7 @@ model = YOLO("models/yolo26x.pt")  #yolo object detection model
 
 cap = cv2.VideoCapture("videos/train run.mp4") #video source
 
-safe_count = 0
-danger_count = 0   
+
 train_status = "Stopped"
 prev_x = None
 prev_y = None
@@ -51,7 +50,8 @@ while True:
 
     # yellow line
     # cv2.line(img= frame , pt1= (215,800) , pt2= (275,171) ,color= (0,255,255),thickness=5)
-
+    safe_count = 0
+    danger_count = 0   
     
     
 
