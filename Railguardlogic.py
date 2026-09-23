@@ -1,4 +1,5 @@
-
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 # function to check side
 def side_of_line(point, line_start, line_end):
@@ -19,7 +20,7 @@ def count_peoples(side):
         danger_count += 1
 
 def train(distance):
-    if distance > 5:
+    if distance > 2:
         global train_status
         train_status = "Running"
 
@@ -33,14 +34,13 @@ from ultralytics import YOLO
 import cv2
 import math
 
-model = YOLO("models/yolo26x.pt")  #yolo object detection model
+model = YOLO("models/yolo26l.pt")  #yolo object detection model
 
-cap = cv2.VideoCapture("videos/train run.mp4") #video source
+cap = cv2.VideoCapture("videos/upcoming_train.mp4") #video source
 
 
 train_status = "Stopped"
-prev_x = None
-prev_y = None
+previous_corners = None
 
 
 while True:
@@ -77,15 +77,30 @@ while True:
                 cv2.rectangle(frame , pt1=(x1,y1),pt2=(x2,y2) , color =(255,0,0) , thickness = 1 )
                 cv2.putText(frame , text = f"Train {train_id}"  , org=(x1,y1-10) , fontFace=cv2.FONT_HERSHEY_SIMPLEX , fontScale=0.35 , color=(255,0,0) , thickness=1)
 
-                current_x = (x1 + x2) /2
-                current_y = (y1 + y2)/2
+                corners = [
+                (x1, y1),
+                (x2, y1),
+                (x1, y2),
+                (x2, y2)
+            ]
 
-                if prev_x is not None:
-                    distance = math.sqrt((current_x - prev_x)**2 + (current_y - prev_y)**2)
-                    train(distance)
+                if previous_corners is not None:
 
-                prev_x = current_x
-                prev_y = current_y
+                    distances = []
+
+                    for current, previous in zip(corners, previous_corners):
+
+                        distance = math.sqrt(
+                            (current[0] - previous[0])**2 + (current[1] - previous[1])**2 
+                        )
+
+                        distances.append(distance)
+
+                    average_distance = sum(distances) / len(distances)
+
+                    train(average_distance)
+
+                previous_corners = corners
 
 
  
