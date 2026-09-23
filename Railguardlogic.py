@@ -18,14 +18,31 @@ def count_peoples(side):
         global danger_count
         danger_count += 1
 
+def train(distance):
+    if distance > 5:
+        global train_status
+        train_status = "Running"
+
+    else:
+        train_status = "Stopped"
+        
+
 # ==============================================================================================================================
 
 from ultralytics import YOLO
 import cv2
+import math
 
-model = YOLO("models/yolo26m.pt")  #yolo object detection model
+model = YOLO("models/yolo26x.pt")  #yolo object detection model
 
-cap = cv2.VideoCapture("videos/platform.mp4") #video source
+cap = cv2.VideoCapture("videos/train run.mp4") #video source
+
+safe_count = 0
+danger_count = 0   
+train_status = "Stopped"
+prev_x = None
+prev_y = None
+
 
 while True:
     ret,frame = cap.read()
@@ -36,8 +53,8 @@ while True:
     # cv2.line(img= frame , pt1= (215,800) , pt2= (275,171) ,color= (0,255,255),thickness=5)
 
     
-    safe_count = 0
-    danger_count = 0    
+    
+
     result = model.track(frame , persist=True , tracker="bytetrack.yaml")
 
 
@@ -52,6 +69,25 @@ while True:
 
 
             #detecting train movement
+
+            if class_id == 6:
+
+                train_id = int(box.id[0]) if box.id is not None else -1
+
+                cv2.rectangle(frame , pt1=(x1,y1),pt2=(x2,y2) , color =(255,0,0) , thickness = 1 )
+                cv2.putText(frame , text = f"Train {train_id}"  , org=(x1,y1-10) , fontFace=cv2.FONT_HERSHEY_SIMPLEX , fontScale=0.35 , color=(255,0,0) , thickness=1)
+
+                current_x = (x1 + x2) /2
+                current_y = (y1 + y2)/2
+
+                if prev_x is not None:
+                    distance = math.sqrt((current_x - prev_x)**2 + (current_y - prev_y)**2)
+                    train(distance)
+
+                prev_x = current_x
+                prev_y = current_y
+
+
  
             #if train moves then classify zones 
             if class_id == 0 :
@@ -71,32 +107,22 @@ while True:
 
 
                 # Person ID text
-                cv2.putText(
-                    frame,
-                    f"ID: {person_id}",
-                    (x1, y1 - 30),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6,
-                    (0, 255, 0),
-                    2
-                )
+                cv2.putText(frame, text = f"ID: {person_id}" ,org = (x1, y1 - 30), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.6, color=(0, 255, 0), thickness=2)
                 
                 #counting person in both zones 
                           
                 count_peoples(side)
 
+            
+
+
     cv2.putText(frame , f"SAFE COUNT :- {safe_count}" , org=(30,40) ,fontFace=cv2.FONT_HERSHEY_SIMPLEX , fontScale=0.6 , color=(0,255,0) , thickness=2 )
     cv2.putText(frame , f"DANGER COUNT :- {danger_count}" , org=(30,60) ,fontFace=cv2.FONT_HERSHEY_SIMPLEX , fontScale=0.6 , color=(0,0,255) , thickness=2 )
-
+    cv2.putText(frame, f"Train Status:- {train_status}" , org = (250, 60), fontFace = cv2.FONT_HERSHEY_SIMPLEX , fontScale=0.6 , color=(255,0,0) , thickness=2)
                 
 
 
 
-
-
-
-
-    
     cv2.imshow("Video Frame", frame  )
 
 
