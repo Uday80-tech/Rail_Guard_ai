@@ -18,14 +18,42 @@ def count_peoples(side):
         global danger_count
         danger_count += 1
 
+def alert_system(side , person_id):
+    global danger_duration
+
+    if side == 1:
+        if person_id not in danger_duration:
+            danger_duration[person_id] = time.time()
+
+            return False
+
+        else:
+            duration = time.time() - danger_duration[person_id]
+
+            if duration > 3:
+                return True
+            else:
+                return False
+
+    elif side == 0:
+        if person_id in danger_duration:
+
+            del danger_duration[person_id]
+
+        return False
+
+
 # ==============================================================================================================================
 
 from ultralytics import YOLO
 import cv2
+import time
 
 model = YOLO("models/yolo26m.pt")  #yolo object detection model
 
 cap = cv2.VideoCapture("videos/platform.mp4") #video source
+
+danger_duration = {}
 
 while True:
     ret,frame = cap.read()
@@ -35,7 +63,7 @@ while True:
     # yellow line
     # cv2.line(img= frame , pt1= (215,800) , pt2= (275,171) ,color= (0,255,255),thickness=5)
 
-    
+    alert = False
     safe_count = 0
     danger_count = 0    
     result = model.track(frame , persist=True , tracker="bytetrack.yaml")
@@ -85,6 +113,16 @@ while True:
                           
                 count_peoples(side)
 
+                #checking duration in danger zone is above 3 sec
+                
+                alert = alert_system(side,person_id)
+
+                
+
+
+
+    if alert:
+        cv2.putText(frame , "Alert activated" , org=(30,80) ,fontFace=cv2.FONT_HERSHEY_SIMPLEX , fontScale=0.6 , color=(0,255,255) , thickness=2)
     cv2.putText(frame , f"SAFE COUNT :- {safe_count}" , org=(30,40) ,fontFace=cv2.FONT_HERSHEY_SIMPLEX , fontScale=0.6 , color=(0,255,0) , thickness=2 )
     cv2.putText(frame , f"DANGER COUNT :- {danger_count}" , org=(30,60) ,fontFace=cv2.FONT_HERSHEY_SIMPLEX , fontScale=0.6 , color=(0,0,255) , thickness=2 )
 
