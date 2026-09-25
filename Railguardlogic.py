@@ -1,6 +1,10 @@
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
+
+from train_status import check_train_status
+
+
 # function to check side
 def side_of_line(point, line_start, line_end):
     x, y = point
@@ -19,28 +23,21 @@ def count_peoples(side):
         global danger_count
         danger_count += 1
 
-def train(distance):
-    if distance > 2:
-        global train_status
-        train_status = "Running"
-
-    else:
-        train_status = "Stopped"
-        
-
 # ==============================================================================================================================
 
 from ultralytics import YOLO
 import cv2
 import math
+import numpy as np
 
-model = YOLO("models/yolo26l.pt")  #yolo object detection model
+model = YOLO("models/yolo26xpt")  #yolo object detection model
 
-cap = cv2.VideoCapture("videos/upcoming_train.mp4") #video source
+
+cap = cv2.VideoCapture("videos/train not moving.mp4") #video source
 
 
 train_status = "Stopped"
-previous_corners = None
+previous_x = {}
 
 
 while True:
@@ -48,18 +45,19 @@ while True:
     if not ret:
         break
 
+
+
     # yellow line
     # cv2.line(img= frame , pt1= (215,800) , pt2= (275,171) ,color= (0,255,255),thickness=5)
     safe_count = 0
     danger_count = 0   
+    prev_x = None
     
     
 
     result = model.track(frame , persist=True , tracker="bytetrack.yaml")
-
-
-
-    
+   
+ 
     for box in result[0].boxes:
         if int(box.cls[0]) > -1:
 
@@ -76,35 +74,8 @@ while True:
 
                 cv2.rectangle(frame , pt1=(x1,y1),pt2=(x2,y2) , color =(255,0,0) , thickness = 1 )
                 cv2.putText(frame , text = f"Train {train_id}"  , org=(x1,y1-10) , fontFace=cv2.FONT_HERSHEY_SIMPLEX , fontScale=0.35 , color=(255,0,0) , thickness=1)
+                train_status = check_train_status(frame,(x1, y1, x2, y2),train_id)
 
-                corners = [
-                (x1, y1),
-                (x2, y1),
-                (x1, y2),
-                (x2, y2)
-            ]
-
-                if previous_corners is not None:
-
-                    distances = []
-
-                    for current, previous in zip(corners, previous_corners):
-
-                        distance = math.sqrt(
-                            (current[0] - previous[0])**2 + (current[1] - previous[1])**2 
-                        )
-
-                        distances.append(distance)
-
-                    average_distance = sum(distances) / len(distances)
-
-                    train(average_distance)
-
-                previous_corners = corners
-
-
- 
-            #if train moves then classify zones 
             if class_id == 0 :
 
                 #asigning id to persons
@@ -143,7 +114,7 @@ while True:
 
     if cv2.waitKey(1) & 0xFF == ord('x'):
         break
-
+    
 
 cap.release()
 cv2.destroyAllWindows()

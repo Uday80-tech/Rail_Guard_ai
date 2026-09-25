@@ -1,3 +1,9 @@
 models/
 videos/
 .venv/
+# Python cache
+__pycache__/
+*.pyc
+
+# YOLO model files
+*.pt
