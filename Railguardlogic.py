@@ -54,7 +54,9 @@ model = YOLO("models/yolo26n.pt")  #yolo object detection model
 cap = cv2.VideoCapture("videos/platform.mp4") #video source
 
 danger_duration = {}
-
+frame_no = 0
+previous_point = None
+train_status =False
 
 while True:
     ret,frame = cap.read()
@@ -63,6 +65,7 @@ while True:
 
     # yellow line
     # cv2.line(img= frame , pt1= (215,800) , pt2= (275,171) ,color= (0,255,255),thickness=5)
+    frame_no = frame_no + 1
     alert = False
     safe_count = 0
     danger_count = 0    
@@ -74,12 +77,29 @@ while True:
     for box in result[0].boxes:
         if int(box.cls[0]) > -1:
 
+            frame_no = frame_no + 1
+
             # identifying entities
             class_id = int(box.cls[0])
             x1,y1,x2,y2 = map(int , box.xyxy[0])
 
 
             #detecting train movement
+            if class_id == 6:
+                train_id = int(box.id[0]) if box.id is not None else -1
+
+                if train_id == -1:
+                    continue
+                current_point = (x1+x2)/2
+                if frame_no % 12 == 0:
+                    if previous_point is not None:
+                        
+
+                        diff = abs(previous_point -current_point)
+                        train_status = True if diff > 5 else False
+                    previous_point = current_point
+
+
  
             #if train moves then classify zones 
             if class_id == 0 :
@@ -99,15 +119,7 @@ while True:
 
 
                 # Person ID text
-                cv2.putText(
-                    frame,
-                    f"ID: {person_id}",
-                    (x1, y1 - 30),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6,
-                    (0, 255, 0),
-                    2
-                )
+                cv2.putText(frame,f"ID: {person_id}",(x1, y1 - 30),cv2.FONT_HERSHEY_SIMPLEX,0.6,color =(0,255,0) if side == 0 else (0,0,255), thickness=2)
                 
                 #counting person in both zones 
                           
@@ -125,7 +137,7 @@ while True:
 
 
 
-    
+    cv2.putText(frame , f"Train status :- {train_status}" , org=(30,100) ,fontFace=cv2.FONT_HERSHEY_SIMPLEX , fontScale=0.6 , color=(0,0,0) , thickness=2)   
     cv2.putText(frame , f"Alert status :- {alert}" , org=(30,80) ,fontFace=cv2.FONT_HERSHEY_SIMPLEX , fontScale=0.6 , color=(0,255,255) , thickness=2)
     cv2.putText(frame , f"SAFE COUNT :- {safe_count}" , org=(30,40) ,fontFace=cv2.FONT_HERSHEY_SIMPLEX , fontScale=0.6 , color=(0,255,0) , thickness=2 )
     cv2.putText(frame , f"DANGER COUNT :- {danger_count}" , org=(30,60) ,fontFace=cv2.FONT_HERSHEY_SIMPLEX , fontScale=0.6 , color=(0,0,255) , thickness=2 )
