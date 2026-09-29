@@ -51,7 +51,7 @@ import time
 
 model = YOLO("models/yolo26n.pt")  #yolo object detection model
 
-cap = cv2.VideoCapture("videos/platform.mp4") #video source
+cap = cv2.VideoCapture("videos/train3.mp4") #video source
 
 danger_duration = {}
 frame_no = 0
@@ -91,12 +91,12 @@ while True:
                 if train_id == -1:
                     continue
                 current_point = (x1+x2)/2
-                if frame_no % 12 == 0:
+                if frame_no % 20 == 0:
                     if previous_point is not None:
                         
 
                         diff = abs(previous_point -current_point)
-                        train_status = True if diff > 5 else False
+                        train_status = True if diff > 4 else False
                     previous_point = current_point
 
 
